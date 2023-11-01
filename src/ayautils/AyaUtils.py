@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import csv
 
 
 class AccessMode:
@@ -60,6 +61,133 @@ class Log:
         print(output)
         with open(f"{self.OUTPUT_DIR}/{self.LOG_FILE}", AccessMode.APPEND) as log_file:
             log_file.write(f"{output}\n")
+
+
+class CsvDocument:
+    ROWS: list[dict]
+    HEADERS: list
+    PATH: str
+    NAME: str
+
+    def __init__(self, path: str, name: str) -> None:
+        self.ROWS = []
+        self.HEADERS = []
+        self.PATH = path
+        self.NAME = name
+
+    def write_to_file(self) -> bool:
+        with open(
+            file=f".\\{self.PATH}\\{self.NAME}.csv",
+            mode="w",
+            newline="",
+            encoding="utf-8",
+        ) as f:
+            writer = csv.DictWriter(f=f, fieldnames=self.HEADERS)
+            writer.writeheader()
+            writer.writerows(self.ROWS)
+
+
+class DocumentManager:
+    SUB_DOCUMENTS: list[CsvDocument]
+
+    def __init__(self, primary_key: str, primary_document: CsvDocument) -> None:
+        self.PRIMARY_KEY = primary_key
+        self.PRIMARY_DOCUMENT = primary_document
+        self.SUB_DOCUMENTS = []
+
+
+def unnest_to_csv(
+    docman: DocumentManager,
+    subj: dict,
+    subdocpath: str = None,
+    foreignkey=None,
+) -> DocumentManager:
+    if docman.PRIMARY_KEY is None or docman.PRIMARY_DOCUMENT is None:
+        return docman
+    if subdocpath is None:
+        isprimary = True
+        docname = docman.PRIMARY_DOCUMENT.NAME
+        workingdoc = docman.PRIMARY_DOCUMENT
+        foreignkeylabel = None
+    else:
+        isprimary = False
+        docname = f"{docman.PRIMARY_DOCUMENT.NAME}.{subdocpath}"
+        wdidx = __getindexbyname(docman=docman, name=docname)
+        if wdidx is None:
+            docman.SUB_DOCUMENTS.append(
+                CsvDocument(docman.PRIMARY_DOCUMENT.PATH, docname)
+            )
+            wdidx = len(docman.SUB_DOCUMENTS) - 1
+        workingdoc = docman.SUB_DOCUMENTS[wdidx]
+        foreignkeylabel = f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+        subj[foreignkeylabel] = foreignkey
+    dclone = subj.copy()
+    for key in dclone:
+        if isinstance(dclone[key], dict):
+            cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
+            foreignkey = (
+                foreignkey if foreignkey is not None else dclone[docman.PRIMARY_KEY]
+            )
+            docman = unnest_to_csv(
+                docman=docman,
+                subj=dclone[key],
+                subdocpath=cursdpath,
+                foreignkey=foreignkey,
+            )
+            subj.pop(key)
+        if isinstance(dclone[key], list):
+            cleanlist = []
+            for el in dclone[key]:
+                if isinstance(el, dict):
+                    cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
+                    foreignkey = (
+                        foreignkey
+                        if foreignkey is not None
+                        else dclone[docman.PRIMARY_KEY]
+                    )
+                    docman = unnest_to_csv(
+                        docman=docman,
+                        subj=el,
+                        subdocpath=cursdpath,
+                        foreignkey=foreignkey,
+                    )
+                else:
+                    cleanlist.append(el)
+            if cleanlist == []:
+                subj.pop(key)
+            else:
+                subj[key] = cleanlist
+    workingdoc.HEADERS = __getheaders(
+        subj=subj,
+        existing_headers=workingdoc.HEADERS,
+        foreign_key_label=foreignkeylabel,
+    )
+    workingdoc.ROWS.append(subj)
+    if isprimary:
+        docman.PRIMARY_DOCUMENT = workingdoc
+    else:
+        docman.SUB_DOCUMENTS[wdidx] = workingdoc
+    return docman
+
+
+def __getindexbyname(docman: DocumentManager, name: str) -> int:
+    if docman.PRIMARY_DOCUMENT.NAME == name:
+        return -1
+    for idx, doc in enumerate(docman.SUB_DOCUMENTS):
+        if doc.NAME == name:
+            return idx
+    return None
+
+
+def __getheaders(
+    subj: dict, existing_headers: list[str] = [], foreign_key_label: str = None
+) -> list[str]:
+    if foreign_key_label is not None and foreign_key_label not in existing_headers:
+        existing_headers.append(foreign_key_label)
+    for key in subj.keys():
+        if key not in existing_headers:
+            existing_headers.append(key)
+    return existing_headers
 
 
 def run(
