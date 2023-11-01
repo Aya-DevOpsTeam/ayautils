@@ -80,6 +80,7 @@ class CsvDocument:
             file=f".\\{self.PATH}\\{self.NAME}.csv",
             mode="w",
             newline="",
+            encoding="utf-8",
         ) as f:
             writer = csv.DictWriter(f=f, fieldnames=self.HEADERS)
             writer.writeheader()
