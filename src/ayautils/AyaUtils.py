@@ -104,6 +104,8 @@ def unnest_to_csv(
     subdocpath: str = None,
     foreignkeylabel: str = None,
     foreignkey=None,
+    unnestdicts: bool = True,
+    unnestsimplelists: bool = True,
 ) -> DocumentManager:
     if docman.PRIMARY_KEY is None or docman.PRIMARY_DOCUMENT is None:
         return docman
@@ -131,7 +133,7 @@ def unnest_to_csv(
 
     dclone = subj.copy()
     for key in dclone:
-        if isinstance(dclone[key], dict):
+        if isinstance(dclone[key], dict) and unnestdicts:
             cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
             keylabeltopass = (
                 f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
@@ -150,7 +152,7 @@ def unnest_to_csv(
         if isinstance(dclone[key], list):
             cleanlist = []
             for el in dclone[key]:
-                if isinstance(el, dict):
+                if isinstance(el, dict) and unnestdicts:
                     cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
                     keylabeltopass = (
                         f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
@@ -163,6 +165,23 @@ def unnest_to_csv(
                     docman = unnest_to_csv(
                         docman=docman,
                         subj=el,
+                        subdocpath=cursdpath,
+                        foreignkeylabel=keylabeltopass,
+                        foreignkey=keytopass,
+                    )
+                elif unnestsimplelists:
+                    cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
+                    keylabeltopass = (
+                        f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+                        if isprimary
+                        else localkeylabel
+                    )
+                    keytopass = (
+                        dclone[docman.PRIMARY_KEY] if isprimary else subj[localkeylabel]
+                    )
+                    docman = unnest_to_csv(
+                        docman=docman,
+                        subj={"value": el},
                         subdocpath=cursdpath,
                         foreignkeylabel=keylabeltopass,
                         foreignkey=keytopass,
