@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import csv
+import hashlib
 
 
 class AccessMode:
@@ -99,7 +100,9 @@ class DocumentManager:
 def unnest_to_csv(
     docman: DocumentManager,
     subj: dict,
+    subdockeylabel: str = "key",
     subdocpath: str = None,
+    foreignkeylabel: str = None,
     foreignkey=None,
 ) -> DocumentManager:
     if docman.PRIMARY_KEY is None or docman.PRIMARY_DOCUMENT is None:
@@ -108,8 +111,10 @@ def unnest_to_csv(
         isprimary = True
         docname = docman.PRIMARY_DOCUMENT.NAME
         workingdoc = docman.PRIMARY_DOCUMENT
-        foreignkeylabel = None
+        # foreignkeylabel = None
+        localkeylabel = None
     else:
+        keyhash = hashlib.sha256(str(subj).encode()).hexdigest()
         isprimary = False
         docname = f"{docman.PRIMARY_DOCUMENT.NAME}.{subdocpath}"
         wdidx = __getindexbyname(docman=docman, name=docname)
@@ -119,20 +124,27 @@ def unnest_to_csv(
             )
             wdidx = len(docman.SUB_DOCUMENTS) - 1
         workingdoc = docman.SUB_DOCUMENTS[wdidx]
-        foreignkeylabel = f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+        # foreignkeylabel = f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+        localkeylabel = f"{subdocpath}_{subdockeylabel}"
         subj[foreignkeylabel] = foreignkey
+        subj[localkeylabel] = keyhash
+
     dclone = subj.copy()
     for key in dclone:
         if isinstance(dclone[key], dict):
             cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
-            foreignkey = (
-                foreignkey if foreignkey is not None else dclone[docman.PRIMARY_KEY]
+            keylabeltopass = (
+                f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+                if isprimary
+                else localkeylabel
             )
+            keytopass = dclone[docman.PRIMARY_KEY] if isprimary else subj[localkeylabel]
             docman = unnest_to_csv(
                 docman=docman,
                 subj=dclone[key],
                 subdocpath=cursdpath,
-                foreignkey=foreignkey,
+                foreignkeylabel=keylabeltopass,
+                foreignkey=keytopass,
             )
             subj.pop(key)
         if isinstance(dclone[key], list):
@@ -140,16 +152,20 @@ def unnest_to_csv(
             for el in dclone[key]:
                 if isinstance(el, dict):
                     cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
-                    foreignkey = (
-                        foreignkey
-                        if foreignkey is not None
-                        else dclone[docman.PRIMARY_KEY]
+                    keylabeltopass = (
+                        f"{docman.PRIMARY_DOCUMENT.NAME}_{docman.PRIMARY_KEY}"
+                        if isprimary
+                        else localkeylabel
+                    )
+                    keytopass = (
+                        dclone[docman.PRIMARY_KEY] if isprimary else subj[localkeylabel]
                     )
                     docman = unnest_to_csv(
                         docman=docman,
                         subj=el,
                         subdocpath=cursdpath,
-                        foreignkey=foreignkey,
+                        foreignkeylabel=keylabeltopass,
+                        foreignkey=keytopass,
                     )
                 else:
                     cleanlist.append(el)
@@ -180,10 +196,15 @@ def __getindexbyname(docman: DocumentManager, name: str) -> int:
 
 
 def __getheaders(
-    subj: dict, existing_headers: list[str] = [], foreign_key_label: str = None
+    subj: dict,
+    existing_headers: list[str] = [],
+    foreign_key_label: str = None,
+    local_key_label: str = None,
 ) -> list[str]:
     if foreign_key_label is not None and foreign_key_label not in existing_headers:
         existing_headers.append(foreign_key_label)
+    if local_key_label is not None and local_key_label not in existing_headers:
+        existing_headers.append(local_key_label)
     for key in subj.keys():
         if key not in existing_headers:
             existing_headers.append(key)

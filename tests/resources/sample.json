@@ -1,0 +1,58 @@
+[
+    {
+        "id": 1,
+        "name": "Jose Martin",
+        "phones": [
+            "123-123-1234"
+        ],
+        "emails": [
+            {
+                "type": "personal",
+                "address": "jose.martin@corp.com"
+            }
+        ],
+        "manager": {
+            "id": 2,
+            "name": "John Smith",
+            "phones": [
+                "123-123-1234"
+            ],
+            "emails": [
+                {
+                    "type": "personal",
+                    "address": "john.smith@corp.com"
+                }
+            ]
+        }
+    },
+    {
+        "id": 3,
+        "name": "Jordon Cox",
+        "phones": [
+            "456-456-4567"
+        ],
+        "emails": [
+            {
+                "type": "personal",
+                "address": "jordon.cox@corp.com"
+            },
+            {
+                "type": "work",
+                "address": "j.c@work.com"
+            }
+        ],
+        "manager": {
+            "id": 4,
+            "name": "Jane Doe",
+            "phones": [
+                "789-789-7890"
+            ],
+            "emails": [
+                {
+                    "type": "personal",
+                    "address": "jane.doe@corp.com"
+                }
+            ]
+        }
+    }
+]
