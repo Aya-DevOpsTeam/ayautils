@@ -139,6 +139,7 @@ def unnest_to_csv(
         mutable_subj[localkeylabel] = keyhash
 
     dclone = mutable_subj.copy()
+    top_level_key_value = dclone[docman.PRIMARY_KEY] if isprimary else None
     for key in dclone:
         if isinstance(dclone[key], dict) and unnestdicts:
             cursdpath = f"{subdocpath}.{key}" if subdocpath is not None else key
@@ -165,7 +166,7 @@ def unnest_to_csv(
                 pkey=key,
                 parent=mutable_subj,
                 localkeylabel=localkeylabel,
-                primarykey=dclone[docman.PRIMARY_KEY],
+                primarykey=top_level_key_value,
                 subdocpath=subdocpath,
                 isprimary=isprimary,
                 unnestsimplelists=unnestsimplelists,
@@ -177,7 +178,7 @@ def unnest_to_csv(
                 docman=docman,
                 key=key,
                 localkeylabel=localkeylabel,
-                primarykey=dclone[docman.PRIMARY_KEY],
+                primarykey=top_level_key_value,
                 mutable_subj=mutable_subj,
                 subdocpath=subdocpath,
                 isprimary=isprimary,
