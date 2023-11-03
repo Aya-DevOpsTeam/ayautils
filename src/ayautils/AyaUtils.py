@@ -7,8 +7,6 @@ import re
 import subprocess
 import sys
 
-import pandas
-
 
 class AccessMode:
     OVERWRITE = "w"
@@ -88,12 +86,12 @@ class CsvDocument:
             writer = csv.DictWriter(f=f, fieldnames=self.HEADERS)
             writer.writeheader()
             writer.writerows(self.ROWS)
-        if include_parquet:
-            try:
-                df = pandas.read_csv(filepath_or_buffer=f"{self.PATH}\\{self.NAME}.csv")
-                df.to_parquet(path=f"{self.PATH}\\{self.NAME}.parquet")
-            except:
-                print("Fail state")
+        # if include_parquet:
+        #     try:
+        #         df = pandas.read_csv(filepath_or_buffer=f"{self.PATH}\\{self.NAME}.csv")
+        #         df.to_parquet(path=f"{self.PATH}\\{self.NAME}.parquet")
+        #     except:
+        #         print("Fail state")
 
 
 class DocumentManager:
