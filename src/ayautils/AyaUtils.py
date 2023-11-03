@@ -1,11 +1,13 @@
+import csv
 import datetime
 import glob
+import hashlib
 import os
 import re
 import subprocess
 import sys
-import csv
-import hashlib
+
+import pandas
 
 
 class AccessMode:
@@ -76,9 +78,9 @@ class CsvDocument:
         self.PATH = path
         self.NAME = name
 
-    def write_to_file(self) -> bool:
+    def write_to_file(self, include_parquet: bool = False) -> bool:
         with open(
-            file=f".\\{self.PATH}\\{self.NAME}.csv",
+            file=f"{self.PATH}\\{self.NAME}.csv",
             mode="w",
             newline="",
             encoding="utf-8",
@@ -86,6 +88,12 @@ class CsvDocument:
             writer = csv.DictWriter(f=f, fieldnames=self.HEADERS)
             writer.writeheader()
             writer.writerows(self.ROWS)
+        if include_parquet:
+            try:
+                df = pandas.read_csv(filepath_or_buffer=f"{self.PATH}\\{self.NAME}.csv")
+                df.to_parquet(path=f"{self.PATH}\\{self.NAME}.parquet")
+            except:
+                print("Fail state")
 
 
 class DocumentManager:
@@ -153,25 +161,17 @@ def unnest_to_csv(
             )
             mutable_subj.pop(key)
         if isinstance(dclone[key], dict):
-            for dkey in dclone[key]:
-                flat_key = f"{key}_{dkey}"
-                mutable_subj[flat_key] = dclone[key][dkey]
-                if isinstance(dclone[key][dkey], list):
-                    cleanlist = __listprocessor(
-                        listsubj=mutable_subj[flat_key],
-                        docman=docman,
-                        key=flat_key,
-                        localkeylabel=localkeylabel,
-                        primarykey=dclone[docman.PRIMARY_KEY],
-                        mutable_subj=mutable_subj,
-                        subdocpath=subdocpath,
-                        isprimary=isprimary,
-                        unnestsimplelists=unnestsimplelists,
-                    )
-                    if cleanlist == []:
-                        mutable_subj.pop(flat_key)
-                    else:
-                        mutable_subj[flat_key] = cleanlist
+            __dictprocessor(
+                docman=docman,
+                subj=dclone[key],
+                pkey=key,
+                parent=mutable_subj,
+                localkeylabel=localkeylabel,
+                primarykey=dclone[docman.PRIMARY_KEY],
+                subdocpath=subdocpath,
+                isprimary=isprimary,
+                unnestsimplelists=unnestsimplelists,
+            )
             mutable_subj.pop(key)
         if isinstance(dclone[key], list):
             cleanlist = __listprocessor(
@@ -200,6 +200,51 @@ def unnest_to_csv(
     else:
         docman.SUB_DOCUMENTS[wdidx] = workingdoc
     return docman
+
+
+def __dictprocessor(
+    docman: DocumentManager,
+    subj: dict,
+    pkey: str,
+    parent: dict,
+    localkeylabel: str,
+    primarykey: any,
+    subdocpath: str,
+    isprimary: bool,
+    unnestsimplelists: bool,
+):
+    for dkey in subj:
+        flat_key = f"{pkey}_{dkey}"
+        if isinstance(subj[dkey], dict):
+            __dictprocessor(
+                docman=docman,
+                subj=subj[dkey],
+                pkey=flat_key,
+                parent=parent,
+                localkeylabel=localkeylabel,
+                primarykey=primarykey,
+                subdocpath=subdocpath,
+                isprimary=isprimary,
+                unnestsimplelists=unnestsimplelists,
+            )
+            continue
+        parent[flat_key] = subj[dkey]
+        if isinstance(subj[dkey], list):
+            cleanlist = __listprocessor(
+                listsubj=parent[flat_key],
+                docman=docman,
+                key=flat_key,
+                localkeylabel=localkeylabel,
+                primarykey=primarykey,
+                mutable_subj=parent,
+                subdocpath=subdocpath,
+                isprimary=isprimary,
+                unnestsimplelists=unnestsimplelists,
+            )
+            if cleanlist == []:
+                parent.pop(flat_key)
+            else:
+                parent[flat_key] = cleanlist
 
 
 def __listprocessor(

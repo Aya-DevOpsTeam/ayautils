@@ -1,13 +1,13 @@
 import ayautils
 import json
 
-with open(".\\resources\\sample.json", "r") as src:
+with open("tests\\resources\\sample.json", "r") as src:
     obj = json.loads(s=src.read())
 print(obj)
 user_dm = ayautils.DocumentManager(
     primary_key="id",
     primary_document=ayautils.CsvDocument(
-        path="output",
+        path="tests\\output",
         name="users",
     ),
 )
