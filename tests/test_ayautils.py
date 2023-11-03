@@ -12,7 +12,10 @@ user_dm = ayautils.DocumentManager(
     ),
 )
 for user in obj:
-    ayautils.unnest_to_csv(docman=user_dm, subj=user)
+    ayautils.unnest_to_csv(
+        docman=user_dm,
+        subj=user,
+    )
 user_dm.PRIMARY_DOCUMENT.write_to_file()
 for doc in user_dm.SUB_DOCUMENTS:
     doc.write_to_file()

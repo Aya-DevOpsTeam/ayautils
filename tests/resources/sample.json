@@ -51,6 +51,10 @@
                 {
                     "type": "personal",
                     "address": "jane.doe@corp.com"
+                },
+                {
+                    "type": "business",
+                    "address": "j.d@bus.com"
                 }
             ]
         }
