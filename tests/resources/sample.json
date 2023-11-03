@@ -14,6 +14,12 @@
         "manager": {
             "id": 2,
             "name": "John Smith",
+            "address": {
+                "street": "1234 W Street Ave",
+                "city": "City",
+                "state": "ST",
+                "country": "USA"
+            },
             "phones": [
                 "123-123-1234"
             ],
@@ -51,6 +57,10 @@
                 {
                     "type": "personal",
                     "address": "jane.doe@corp.com"
+                },
+                {
+                    "type": "business",
+                    "address": "j.d@bus.com"
                 }
             ]
         }

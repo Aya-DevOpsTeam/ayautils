@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "ayautils"
-version = "0.3.1"
+version = "0.3.3"
 description = ""
 authors = ["martinjose <josemartin90@gmail.com>"]
 readme = "README.md"
 packages = [{include = "ayautils", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.0"
+python = ">=3.9,<3.13"
 
 
 [build-system]
