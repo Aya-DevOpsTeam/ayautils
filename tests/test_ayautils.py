@@ -7,7 +7,7 @@ print(obj)
 user_dm = ayautils.DocumentManager(
     primary_key="id",
     primary_document=ayautils.CsvDocument(
-        path="tests\\output",
+        path="tests\\output\\level1\\level2",
         name="users",
     ),
 )
@@ -18,4 +18,4 @@ for user in obj:
     )
 user_dm.PRIMARY_DOCUMENT.write_to_file()
 for doc in user_dm.SUB_DOCUMENTS:
-    doc.write_to_file()
+    doc.write_to_file(include_parquet=True)
