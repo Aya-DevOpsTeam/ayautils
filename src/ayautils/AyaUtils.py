@@ -70,24 +70,28 @@ class CsvDocument:
     ROWS: list[dict]
     HEADERS: list
     PATH: str
+    PREFIX: str
     NAME: str
+    SUFFIX: str
 
-    def __init__(self, path: str, name: str) -> None:
+    def __init__(
+        self, path: str, name: str, prefix: str = "", suffix: str = ""
+    ) -> None:
         self.ROWS = []
         self.HEADERS = []
         self.PATH = path
+        self.PREFIX = prefix
         self.NAME = name
+        self.SUFFIX = suffix
 
     def write_to_file(
         self,
         include_parquet: bool = False,
-        file_prefix: str = "",
-        file_suffix: str = "",
     ) -> bool:
         os.makedirs(name=self.PATH, exist_ok=True)
 
         with open(
-            file=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv",
+            file=f"{self.PATH}\\{self.PREFIX}{self.NAME}{self.SUFFIX}.csv",
             mode="w",
             newline="",
             encoding="utf-8",
@@ -98,10 +102,10 @@ class CsvDocument:
         if include_parquet:
             try:
                 df = read_csv(
-                    filepath_or_buffer=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv"
+                    filepath_or_buffer=f"{self.PATH}\\{self.PREFIX}{self.NAME}{self.SUFFIX}.csv"
                 )
                 df.to_parquet(
-                    path=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.parquet"
+                    path=f"{self.PATH}\\{self.PREFIX}{self.NAME}{self.SUFFIX}.parquet"
                 )
             except:
                 print("Fail state")
