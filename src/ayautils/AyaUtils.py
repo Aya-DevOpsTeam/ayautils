@@ -7,6 +7,8 @@ import re
 import subprocess
 import sys
 
+from pandas import DataFrame, read_csv
+
 
 class AccessMode:
     OVERWRITE = "w"
@@ -76,9 +78,16 @@ class CsvDocument:
         self.PATH = path
         self.NAME = name
 
-    def write_to_file(self, include_parquet: bool = False) -> bool:
+    def write_to_file(
+        self,
+        include_parquet: bool = False,
+        file_prefix: str = "",
+        file_suffix: str = "",
+    ) -> bool:
+        os.makedirs(name=self.PATH, exist_ok=True)
+
         with open(
-            file=f"{self.PATH}\\{self.NAME}.csv",
+            file=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv",
             mode="w",
             newline="",
             encoding="utf-8",
@@ -86,12 +95,17 @@ class CsvDocument:
             writer = csv.DictWriter(f=f, fieldnames=self.HEADERS)
             writer.writeheader()
             writer.writerows(self.ROWS)
-        # if include_parquet:
-        #     try:
-        #         df = pandas.read_csv(filepath_or_buffer=f"{self.PATH}\\{self.NAME}.csv")
-        #         df.to_parquet(path=f"{self.PATH}\\{self.NAME}.parquet")
-        #     except:
-        #         print("Fail state")
+        if include_parquet:
+            try:
+                df = read_csv(
+                    filepath_or_buffer=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv"
+                )
+                df.to_parquet(
+                    path=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.parquet"
+                )
+            except:
+                print("Fail state")
+            pass
 
 
 class DocumentManager:
@@ -317,64 +331,3 @@ def __getheaders(
         if key not in existing_headers:
             existing_headers.append(key)
     return existing_headers
-
-
-def run(
-    env_file_path: str = ".\\.env",
-    requirements_file_path=".\\requirements.txt",
-    main_file_path=".\\main.py",
-) -> None:
-    ENVIRONMENT_FILE = env_file_path
-    REQUIREMENTS_FILE = requirements_file_path
-    MAIN_FILE = main_file_path
-
-    run_log = Log(
-        file_name=f"{os.path.split(os.getcwd())[1]}_run",
-        datetime_in_filename=False,
-        append_existing_file=True,
-    )
-
-    # Open environment file.
-    with open(file=ENVIRONMENT_FILE, mode="+r") as env:
-        lines = env.readlines()
-    run_log.info("Loaded environment variable file.")
-
-    # Load environment variables.
-    for line in lines:
-        if re.match(r"^\#.*", string=line) is not None:
-            continue
-        env_var_parse = re.match(r"^([^=]*)\=\s*[\"\']?([^\"\']*)[\"\']?$", line)
-        if env_var_parse is not None:
-            run_log.info("Found an environment variable.")
-            try:
-                os.environ[env_var_parse.group(1).strip()] = env_var_parse.group(
-                    2
-                ).strip()
-                run_log.info(
-                    f'Env Label: "{env_var_parse.group(1).strip()}", Env Value: "{env_var_parse.group(2).strip() }"'
-                )
-            except:
-                run_log.error(f'Error parsing variable set: "{line}"')
-
-    run_log.info(f"Current Working Directory is: {os.curdir}")
-    run_log.info(
-        f"Attempting to install packages from '{REQUIREMENTS_FILE}' using 'pip'"
-    )
-    try:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", REQUIREMENTS_FILE],
-        )
-    except:
-        run_log.error("Failed during 'pip' command execution!")
-        run_log.error(
-            f"ERROR {sys.exc_info()[0]}: {sys.exc_info()[1]} on line {sys.exc_info()[2].tb_lineno}"
-        )
-        exit(1)
-    run_log.info(f"Successfully installed packages from '{REQUIREMENTS_FILE}'")
-    run_log.info(f"Attempting to execute '{MAIN_FILE}'")
-    try:
-        subprocess.check_call([sys.executable, f"{MAIN_FILE}"])
-    except subprocess.CalledProcessError as cpe:
-        run_log.error("Got non-zero exit code.")
-        run_log.error(f"Code {cpe.returncode}: {cpe.output}")
-    run_log.info("Execution completed.")
