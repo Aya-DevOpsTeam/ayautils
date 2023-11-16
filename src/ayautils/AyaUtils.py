@@ -78,10 +78,16 @@ class CsvDocument:
         self.PATH = path
         self.NAME = name
 
-    def write_to_file(self, include_parquet: bool = False) -> bool:
+    def write_to_file(
+        self,
+        include_parquet: bool = False,
+        file_prefix: str = "",
+        file_suffix: str = "",
+    ) -> bool:
         os.makedirs(name=self.PATH, exist_ok=True)
+
         with open(
-            file=f"{self.PATH}\\{self.NAME}.csv",
+            file=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv",
             mode="w",
             newline="",
             encoding="utf-8",
@@ -91,8 +97,12 @@ class CsvDocument:
             writer.writerows(self.ROWS)
         if include_parquet:
             try:
-                df = read_csv(filepath_or_buffer=f"{self.PATH}\\{self.NAME}.csv")
-                df.to_parquet(path=f"{self.PATH}\\{self.NAME}.parquet")
+                df = read_csv(
+                    filepath_or_buffer=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.csv"
+                )
+                df.to_parquet(
+                    path=f"{self.PATH}\\{file_prefix}{self.NAME}{file_suffix}.parquet"
+                )
             except:
                 print("Fail state")
             pass
