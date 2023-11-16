@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ayautils"
-version = "0.3.5"
+version = "0.4.1"
 description = ""
 authors = ["martinjose <josemartin90@gmail.com>"]
 readme = "README.md"
