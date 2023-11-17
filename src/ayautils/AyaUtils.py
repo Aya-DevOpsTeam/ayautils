@@ -147,7 +147,12 @@ def unnest_to_csv(
         wdidx = __getindexbyname(docman=docman, name=docname)
         if wdidx is None:
             docman.SUB_DOCUMENTS.append(
-                CsvDocument(docman.PRIMARY_DOCUMENT.PATH, docname)
+                CsvDocument(
+                    path=docman.PRIMARY_DOCUMENT.PATH,
+                    name=docname,
+                    prefix=docman.PRIMARY_DOCUMENT.PREFIX,
+                    suffix=docman.PRIMARY_DOCUMENT.SUFFIX,
+                )
             )
             wdidx = len(docman.SUB_DOCUMENTS) - 1
         workingdoc = docman.SUB_DOCUMENTS[wdidx]
